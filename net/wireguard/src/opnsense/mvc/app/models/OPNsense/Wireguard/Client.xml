@@ -16,6 +16,9 @@
                 <pubkey type="TextField">
                     <Required>N</Required>
                 </pubkey>
+                <privkey type="TextField">
+                    <Required>N</Required>
+                </privkey>
                 <psk type="TextField">
                     <Required>N</Required>
                     <mask>/^[a-zA-Z0-9+\/]{43}=$/</mask>
@@ -30,6 +33,9 @@
                 <serveraddress type="HostnameField">
                     <Required>N</Required>
                 </serveraddress>
+                <dnsaddress type="HostnameField">
+                    <Required>N</Required>
+                </dnsaddress>
                 <serverport type="PortField">
                     <Required>N</Required>
                 </serverport>

@@ -18,6 +18,12 @@
         <help>Public key of this instance.</help>
     </field>
     <field>
+        <id>client.privkey</id>
+        <label>Private Key</label>
+        <type>text</type>
+        <help>Private key of this instance. After saving you will see here your private key, please keep it safe.</help>
+    </field>
+    <field>
         <id>client.psk</id>
         <label>Shared Secret</label>
         <type>text</type>
@@ -36,6 +42,12 @@
         <label>Endpoint Address</label>
         <type>text</type>
         <help>Set public IP address the endpoint listens to.</help>
+    </field>
+    <field>
+        <id>client.dnsaddress</id>
+        <label>DNS Address</label>
+        <type>text</type>
+        <help>Set DNS IP address for the endpoint.</help>
     </field>
     <field>
         <id>client.serverport</id>
