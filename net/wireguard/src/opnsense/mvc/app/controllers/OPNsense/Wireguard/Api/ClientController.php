@@ -31,6 +31,7 @@
 namespace OPNsense\Wireguard\Api;
 
 use OPNsense\Base\ApiMutableModelControllerBase;
+use OPNsense\Core\Backend;
 
 class ClientController extends ApiMutableModelControllerBase
 {
@@ -39,27 +40,62 @@ class ClientController extends ApiMutableModelControllerBase
 
     public function searchClientAction()
     {
-        return $this->searchBase('clients.client', array("enabled", "name", "pubkey", "tunneladdress", "serveraddress", "serverport"));
+        return $this->searchBase('clients.client', array("enabled", "name", "pubkey", "tunneladdress", "serveraddress", "serverport", "dnsaddress"));
     }
     public function getClientAction($uuid = null)
     {
         $this->sessionClose();
         return $this->getBase('client', 'clients.client', $uuid);
     }
-    public function addClientAction()
+    public function addClientAction($uuid = null)
     {
-        return $this->addBase('client', 'clients.client');
+        if ($this->request->isPost() && $this->request->hasPost("client")) {
+            if ($uuid != null) {
+                $node = $this->getModel()->getNodeByReference('clients.client.' . $uuid);
+            } else {
+                $node = $this->getModel()->clients->client->Add();
+            }
+            $node->setNodes($this->request->getPost("client"));
+            if (empty((string)$node->pubkey) && empty((string)$node->privkey)) {
+                // generate new keypair
+                $backend = new Backend();
+                $keyspriv = $backend->configdpRun("wireguard genkey", 'private');
+                $keyspub = $backend->configdpRun("wireguard genkey", 'public');
+                $node->privkey = $keyspriv;
+                $node->pubkey = $keyspub;
+            }
+            return $this->validateAndSave($node, 'client');
+        }
+        return array("result" => "failed");
     }
     public function delClientAction($uuid)
     {
         return $this->delBase('clients.client', $uuid);
     }
-    public function setClientAction($uuid)
+    public function setClientAction($uuid = null)
     {
-        return $this->setBase('client', 'clients.client', $uuid);
+        if ($this->request->isPost() && $this->request->hasPost("client")) {
+            if ($uuid != null) {
+                $node = $this->getModel()->getNodeByReference('clients.client.' . $uuid);
+            } else {
+                $node = $this->getModel()->clients->client->Add();
+            }
+            $node->setNodes($this->request->getPost("client"));
+            if (empty((string)$node->pubkey) && empty((string)$node->privkey)) {
+                // generate new keypair
+                $backend = new Backend();
+                $keyspriv = $backend->configdpRun("wireguard genkey", 'private');
+                $keyspub = $backend->configdpRun("wireguard genkey", 'public');
+                $node->privkey = $keyspriv;
+                $node->pubkey = $keyspub;
+            }
+            return $this->validateAndSave($node, 'client');
+        }
+        return array("result" => "failed");
     }
     public function toggleClientAction($uuid)
     {
         return $this->toggleBase('clients.client', $uuid);
     }
 }
+
