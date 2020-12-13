@@ -33,6 +33,7 @@ namespace OPNsense\Wireguard\Api;
 use OPNsense\Base\ApiMutableServiceControllerBase;
 use OPNsense\Core\Backend;
 use OPNsense\Wireguard\General;
+use OPNsense\Wireguard\Client;
 
 /**
  * Class ServiceController
@@ -53,6 +54,17 @@ class ServiceController extends ApiMutableServiceControllerBase
     {
         $backend = new Backend();
         $response = $backend->configdRun("wireguard showconf");
+ 
+        $pubnames = (new Client())->getAllPubkeysWithNames();
+        $rp_lines = preg_split('/\r\n|\r|\n/', $response);
+        $response = '';
+        foreach($rp_lines as $line) {
+            if(substr($line, 0, 6) == 'peer: ') {
+                $key = trim(substr($line, 6));
+                if(isset($pubnames[$key])) $line.= ' * '.$pubnames[$key];
+            }
+            $response .= $line.PHP_EOL;
+        }
         return array("response" => $response);
     }
 
@@ -62,8 +74,29 @@ class ServiceController extends ApiMutableServiceControllerBase
      */
     public function showhandshakeAction()
     {
+        $curtime = time();
         $backend = new Backend();
-        $response = $backend->configdRun("wireguard showhandshake");
-        return array("response" => $response);
+        $response_org = $backend->configdRun("wireguard showhandshake");
+        $resp_arr = array();
+
+        $pubnames = (new Client())->getAllPubkeysWithNames();
+        $rp_lines = preg_split('/\r|\n/', $response_org, -1 , PREG_SPLIT_NO_EMPTY);
+        foreach($rp_lines as $line) {
+            $line = trim($line);
+            if(empty($line)) continue;
+            $cols = preg_split('/[\s]+/', $line);
+            if(count($cols) > 2) {
+                $name = isset($pubnames[$cols[1]]) ? $pubnames[$cols[1]] : '<UNKNOWN>';
+                $timediff = $curtime - intval($cols[2]);
+                $date = !empty($cols[2]) ? ($timediff < 600 ? $timediff." sec. ago\t" : date('Y-m-d H:i:s', intval($cols[2]))) : "NEVER CONNECTED\t";
+                $extratab = empty($cols[2]) ? "\t\t" : "\t";
+                $resp_arr[] = $line.$extratab.$date."\t".$name;
+            } else {
+                $resp_arr[] = $line;
+            }
+        }
+        sort($resp_arr);
+
+        return array("response" => implode(PHP_EOL, $resp_arr));
     }
 }
